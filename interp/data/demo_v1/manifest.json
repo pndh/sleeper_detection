@@ -1,0 +1,14 @@
+{
+ "created": "2026-09-30T01:52:15",
+ "n_requests": 13,
+ "renderer": "demo/harmony_render.py (matches vLLM 0.30 chat endpoint prompt tokens)",
+ "sources": {
+  "type_b_run": "results/demo_type_b (latest run)",
+  "part1_run": "results/demo (latest)"
+ },
+ "sha256": {
+  "requests.jsonl": "1d226d89a492bee695adea3ea7b15161b0b6f5d54cd9a021366af9c53d642cb7",
+  "labels.jsonl": "c0beaf96f45b95b1dd3345c6712220f29b0092358da9293795dfd066e0628754",
+  "outputs.jsonl": "07f1d67096f9bd38856824673a0ec175353c918b54f72c0045f3f281c9fb1ec5"
+ }
+}
