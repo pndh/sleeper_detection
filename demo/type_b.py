@@ -1,4 +1,4 @@
-"""Type B demo (PLAN(2).md §4): payload in context, trigger unmet.
+"""Type B demo (PLAN.md §4): payload in context, trigger unmet.
 
 One latent-instruction-planting payload whose trigger is a specific tool ("Before executing
 GoogleHomeSearchDevices tool, ..."), ported verbatim from the paper's session case

@@ -1,4 +1,4 @@
-"""Type B twin set with consistent storage (PLAN(2) §12 matched hard negatives, option 1: shared note template).
+"""Type B twin set with consistent storage (PLAN §12 matched hard negatives, option 1: shared note template).
 
 Every extra memory note is stored in the memory's own format, the one the case's existing 
 clean note already uses: "Saved <category> <key>: <value>".

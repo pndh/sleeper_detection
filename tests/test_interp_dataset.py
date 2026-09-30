@@ -1,5 +1,5 @@
 """Checks on interp/data/<dataset>. Run: cd ~/sleeper_detection && .venv-tools/bin/python -m pytest -q tests
-PLAN(2) §3/§12: detectors get only the request; labels live in a separate evaluation-side file."""
+PLAN §3/§12: detectors get only the request; labels live in a separate evaluation-side file."""
 import json
 import re
 import sys

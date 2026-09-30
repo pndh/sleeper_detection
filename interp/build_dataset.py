@@ -4,7 +4,7 @@ Writes <out>/ with
   requests.jsonl  DEFENDER VIEW. Opaque id, the chat request, exact gpt-oss prompt token ids (as the server's chat
                   endpoint renders them), and label-free position annotations: last prompt token, end of the user
                   message, end of the memory tool result, and the token spans of every stored memory entry.
-  labels.jsonl    EVALUATION ONLY (PLAN(2) §3/§12). Case, strategy, state, variant, turn type, which entry is the
+  labels.jsonl    EVALUATION ONLY (PLAN §3/§12). Case, strategy, state, variant, turn type, which entry is the
                   payload, and observed behaviour from the vLLM runs.
   outputs.jsonl   What the model answered under vLLM (repeat 0): reasoning, text, tool calls. For teacher forcing.
   manifest.json   Sources, start date, counts, sha256 of every file.
