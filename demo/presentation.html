@@ -585,11 +585,11 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--rule);paddin
       </div>
     </div>
     <div class="finding">
-      <span class="status warn">Blocks M1</span>
+      <span class="status warn">Trigger Format</span>
       <div>
-        <h3>These payloads are not dormant</h3>
-        <p>Every planted memory note in the latent-instruction cases (162 of 162) and the information-elicitation cases (162 of 162) tells the agent to act "in the same turn" as the next memory read. Any turn that reads memory is a trigger turn, so there is no benign turn before the trigger to run detection on. The recipe query confirms it: 9 of 10 attacks.</p>
-        <p>The session-context versions of the latent-instruction cases are different: each waits until a specific tool is about to run. The 150 information-corruption cases also work differently. They change a stored value, which stays dormant until a task uses it, so they fit the plan as written.</p>
+        <h3>Turn-read memory notes trigger on any memory review</h3>
+        <p>In the paper's LIP <code>memory.json</code> slice, notes are phrased with turn-read triggers: <em>"After using this memory... execute in the same turn"</em>. When an agent reviews memory at the start of every turn (per its system prompt), reading memory itself acts as the trigger, firing even on unrelated queries (9 of 10 attacks on the recipe query).</p>
+        <p>In contrast, the paper's canonical <code>session.json</code> cases (162 of 162) and PIC cases use <b>action-conditioned triggers</b>: each waits until a specific tool action is about to run (e.g., <em>"Before executing &lt;Tool&gt;..."</em>). Using these action-conditioned payloads in persistent memory (Part 2) faithfully reproduces the paper's "Plant &rarr; Persist (Dormant) &rarr; Trigger" lifecycle, achieving 0/30 attacks on benign turns and 5/5 at trigger time.</p>
       </div>
     </div>
     <div class="finding">
