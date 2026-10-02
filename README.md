@@ -22,6 +22,10 @@ Mechanistic interpretability framework to detect dormant sleeper instructions in
 * **MoE Routing Bifurcation (Layer 20):** Top-4 routing bifurcates sharply with **$J = 0.33$** overlap between poisoned and benign twins.
 * **Subspace Alignment (Layer 10):** Difference vectors show **67.4% alignment** between dormant ($B$) and active ($D$) states, enabling 1D zero-shot linear separation.
 * **Hidden Deliberation (CoT):** 100% of traces confirm the model explicitly verifies the unmet trigger condition and suppresses execution in hidden reasoning.
+* **Interp Methodology & Toolchain:**
+  * **Harness:** Decoupled Hugging Face bfloat16 forward pass ([`interp/gptoss.py`](file:///home/pndhpndh/sleeper_detection/interp/gptoss.py)) matching vLLM chat token IDs with 93–100% teacher-forced rollout agreement.
+  * **Extracted Tensors:** Layerwise residual streams ($h_L \in \mathbb{R}^{2880}$, 25 layers) and MoE router logits ($r_L \in \mathbb{R}^{32}$, 24 layers, top-4 routing) across 11 targeted sequence coordinates.
+  * **Analytical Primitives:** Multi-position cosine distance, top-4 expert Jaccard overlap, difference-in-means direction vectors ($\vec{d}_L = h_{\text{poisoned}, L} - h_{\text{benign}, L}$), and 1D latent subspace projections.
 
 ---
 
