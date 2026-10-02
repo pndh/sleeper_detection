@@ -1,3 +1,8 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 <title>Poisoned Memory Twins</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,11 +28,12 @@
   --accent:#8e9ef0; --clean:#63c7aa; --clean-soft:#183229; --poison:#f08b78; --poison-soft:#3a201c;
 }
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans);padding-inline:20px;padding-block:40px 64px}
+html{height:100%;min-height:100%;overflow-x:hidden;overflow-y:auto;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans);margin:0;min-height:100vh;min-height:-webkit-fill-available;width:100%;max-width:100vw;overflow-x:hidden;overflow-y:visible;-webkit-overflow-scrolling:touch;padding-inline:20px;padding-block:40px 64px}
 .wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
 section{display:flex;flex-direction:column;gap:16px}
 h1,h2,h3{margin:0;text-wrap:balance}
-h1{font:500 clamp(30px,5vw,42px)/1.15 var(--serif);letter-spacing:-.01em}
+h1{font:500 clamp(28px,5vw,42px)/1.15 var(--serif);letter-spacing:-.01em}
 h2{font-size:22px;font-weight:600;line-height:1.3}
 h3{font-size:15px;font-weight:600}
 p{margin:0;max-width:66ch}
@@ -117,12 +123,23 @@ pre{margin:0;background:var(--code);border-radius:8px;padding:14px 16px;overflow
 footer{font-size:13px;color:var(--muted);border-top:1px solid var(--rule);padding-top:16px}
 
 @media (max-width:640px){
+  body{padding-inline:14px;padding-block:24px 48px}
+  .wrap{gap:36px}
+  h1{font-size:26px}
+  .lede{font-size:15px}
+  .meta{font-size:12px;gap:6px 12px}
   .results,.compare,.quotes{grid-template-columns:1fr}
   .msg{grid-template-columns:1fr;gap:4px}
   .src{white-space:normal}
   .finding{grid-template-columns:1fr;gap:6px}
+  .tablewrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:100%;font-size:12px}
+  th,td{padding:8px 10px}
+  svg{max-width:100%;height:auto}
 }
 </style>
+</head>
+<body>
 
 <div class="wrap">
 
@@ -1659,3 +1676,18 @@ User wants a two-sentence thank-you note to coworker for covering shift on Frida
   });
 })();
 </script>
+
+<script>
+function syncFrameHeight() {
+  if (window.parent && window.parent !== window) {
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    window.parent.postMessage({ type: 'resize', height: h, frameHeight: h }, '*');
+  }
+}
+window.addEventListener('load', syncFrameHeight);
+window.addEventListener('resize', syncFrameHeight);
+setTimeout(syncFrameHeight, 300);
+setTimeout(syncFrameHeight, 1000);
+</script>
+</body>
+</html>
