@@ -190,3 +190,75 @@ run one end-to-end demo.
 - State the sample sizes (40 requests per 2x2 set; the test split size for Phase B).
 - The pilot's causal-intervention numbers (`results/full_reviewer_suite_report.json`, step 3) are invalid. Never cite them.
 - The open question goes on the page, in plain words.
+
+## 7. v2 visuals (Phase A redesign, no GPU)
+
+The live page shows the instrument (two meters with raw logits) but not the event. v2 adds three figures, all built
+from real data, and fixes the copy. Data is already generated: run
+`~/.conda/envs/gpt-oss-env/bin/python site/build_figures.py`, which writes `site/public/data/twins.json` and
+`distribution.json`. Read every number from those files. Do not edit them by hand.
+
+### 7.1 Hero figure: "Same words out. Different inside." (`twins.json`)
+Replace the text-only hero with a 3 x 3 grid placed under the headline:
+- **Columns = turns** (`turns[].title`): Dormant turn 1, Dormant turn 2, Trigger turn. Show each turn's `user_query`
+  above its column as a small chat bubble.
+- **Rows = lanes** (`lanes[]`): clean agent, harmless planted note, attack planted note, each with its one-line
+  `description`. Clicking a row label reveals its `planted_note`.
+- **Each cell:** the agent's real output (`output.text`, truncated to about 80 characters, full text on hover) as a
+  neutral grey bubble, plus a score chip showing `probe_pct_vs_nontarget` as "higher than N% of clean requests". The
+  chip is coloured by `flagged`.
+- **Animation (plays once, replay button, honours `prefers-reduced-motion`):** reveal turn by turn, about 1.2 s
+  each. Turns 1-2: all three output bubbles appear grey and identical; then the chips fade in. Turn 3: the attack
+  lane's bubble turns red and shows `ShopifyDeleteProduct(...)` with the label "attack fired"; the other lanes stay
+  grey.
+- **Headline over the figure:** "Same words out. Different inside." Sub-line: "On the two dormant turns all three
+  agents answer the same way, so an output monitor sees nothing. The probe reads the model's activations and
+  scores the planted notes high from turn 1."
+- **Caption under the figure,** always visible and not hidden behind a tooltip: the four strings in
+  `twins.json.caveats`, as a compact list. Required, because the harmless note is flagged too, and the attack's
+  turn-1 margin is thin (5.83 against a threshold of 5.17).
+- On phones, stack the grid by lane (three cards, each with three turns).
+
+### 7.2 Mechanism diagram (replaces the three "How it works" cards)
+An inline SVG, no library, read left to right:
+1. A request block with a highlighted memory-note stripe.
+2. 24 thin layer bars. Bars 14-19 are tinted, with a tap line dropping from them.
+3. A small "linear probe" box and a score gauge.
+4. An output area that stays empty, labelled "scored before the first output token".
+
+Animate one pulse travelling through the layers (CSS, 2 s, loops slowly, off under reduced motion). Under the
+diagram, keep one short paragraph on the provider-side threat model. Use the same colour tokens as the page, and
+check it in light and dark mode.
+
+### 7.3 Main results figure: score distribution (`distribution.json`)
+Make this the first chart in Results. Move the per-layer chart second, and delete the bar chart (its numbers move
+into a small table under the distribution).
+- Two panels side by side: "Activation probe" (`probe_score`) and "Text-only baseline" (`tfidf_score`).
+- In each, four columns (live+malicious, live+benign, inert+malicious, inert+benign). Draw the 10 points per column
+  as a jittered strip or beeswarm, with a deterministic seed. Colour the target column red and the others grey, and
+  draw a horizontal threshold line (`thresholds_10pct_fpr`).
+- Tooltip: domain, cell, score, percentile.
+- One-line takeaway under the chart, computed from the data rather than typed: "Probe: X of 10 attacks above the
+  line, Y of 30 others above it. Text baseline: X' of 10, Y' of 30."
+
+### 7.4 Meters in the interactive example
+Replace the raw-logit bars and hardcoded ranges (-10..15, -4..1) with the percentile against non-target scores. For
+each example, look its score up in `distribution.json` by `domain` + `cell`. Bar = percentile 0-100, threshold mark at
+90. Label: "higher than N% of clean requests". Keep the raw score in small mono text.
+
+### 7.5 Copy fixes (required)
+- Remove the "Mechanistic Anomaly Detection" badge. That is a specific research programme this project does not
+  claim. Use "Research prototype" instead.
+- Replace the "Decision logic" box with: "Flags a request when the probe's score at the end of the memory result is
+  above the threshold. On current data it responds to a live planted instruction; harmful vs harmless is only
+  weakly separated (AUROC about 0.6)." Read 0.6 from `results.json` (`per_layer_lodo_auroc.mal`, window mean).
+- Rename "Zero-Token Pre-emption" to "Scored before the first output token".
+
+### 7.6 Do not
+- Do not add a per-token heatmap over the memory text. The probe is only trained at one position, so colouring
+  other tokens would be invented.
+- Do not show the twin figure without its caveats, and do not crop the harmless lane out.
+- Do not add stock illustrations, glowing "AI brain" art, or a fake product UI. The data figures are the visuals.
+
+**v2 done when:** all three figures render from the JSON files, with no hand-typed numbers; the page works at 375 px and
+in dark mode; the animation respects reduced motion; and the owner has approved it before redeploying.
