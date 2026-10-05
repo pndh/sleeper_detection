@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <title>Dormant-Payload Detection in Agent Memory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --surface: #ffffff;
+      --surface-subtle: #f0f2f5;
+      --ink: #1b2130;
+      --muted: #5d6778;
+      --rule: #e2e6ed;
+      --code: #ebedf2;
+      --accent: #2c4298;
+      --accent-soft: #edf1fc;
+      --clean: #1a735e;
+      --clean-soft: #e5f5f0;
+      --flagged: #c0392b;
+      --flagged-soft: #fbeee9;
+      --warn: #c27803;
+      --warn-soft: #fef8eb;
+      --sans: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+      --mono: "IBM Plex Mono", ui-monospace, monospace;
+      --serif: "IBM Plex Serif", Georgia, serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #11141a;
+        --surface: #181d26;
+        --surface-subtle: #212733;
+        --ink: #e6eaf0;
+        --muted: #95a1b5;
+        --rule: #2a3342;
+        --code: #1f2530;
+        --accent: #8b9ff7;
+        --accent-soft: #1d253d;
+        --clean: #4ec49a;
+        --clean-soft: #153326;
+        --flagged: #ef6c58;
+        --flagged-soft: #381e1a;
+        --warn: #f5b041;
+        --warn-soft: #3a2e16;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html {
+      min-height: 100%;
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.65 var(--sans);
+      margin: 0;
+      padding: 32px 16px 80px;
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 64px;
+    }
+    section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    h1, h2, h3, h4 {
+      margin: 0;
+      color: var(--ink);
+      font-weight: 600;
+      line-height: 1.25;
+    }
+    h1 {
+      font: 600 clamp(28px, 4.8vw, 42px)/1.2 var(--serif);
+      letter-spacing: -0.015em;
+    }
+    h2 {
+      font-size: clamp(20px, 3vw, 24px);
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 8px;
+    }
+    h3 { font-size: 17px; }
+    p { margin: 0; max-width: 72ch; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .mono { font-family: var(--mono); }
+    code {
+      font-family: var(--mono);
+      font-size: 0.9em;
+      background: var(--code);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 9px 18px;
+      border-radius: 6px;
+      font: 500 14px var(--sans);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #ffffff !important;
+    }
+    .btn-primary:hover { opacity: 0.92; text-decoration: none; }
+    .btn-secondary {
+      background: var(--surface);
+      border-color: var(--rule);
+      color: var(--ink) !important;
+    }
+    .btn-secondary:hover { background: var(--surface-subtle); text-decoration: none; }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font: 500 12px/1.4 var(--mono);
+      width: fit-content;
+    }
+    .badge-subtle {
+      background: var(--surface-subtle);
+      color: var(--muted);
+      border: 1px solid var(--rule);
+    }
+    .badge-detected {
+      background: var(--flagged-soft);
+      color: var(--flagged);
+      border: 1px solid var(--flagged);
+    }
+    .badge-clear {
+      background: var(--clean-soft);
+      color: var(--clean);
+      border: 1px solid var(--clean);
+    }
+
+    /* Cards & Containers */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    /* Interactive Section */
+    .example-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+    }
+    @media (max-width: 820px) {
+      .example-grid { grid-template-columns: 1fr; }
+    }
+
+    .selector-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+    }
+    .select-input {
+      padding: 6px 12px;
+      font: 14px var(--sans);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--ink);
+      outline: none;
+      max-width: 100%;
+    }
+
+    .agent-window {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .window-header {
+      padding: 10px 16px;
+      background: var(--surface-subtle);
+      border-bottom: 1px solid var(--rule);
+      font: 500 13px var(--mono);
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .window-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Message Boxes */
+    .msg-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .msg-label {
+      font: 600 12px var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .msg-box {
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 14px;
+      background: var(--surface-subtle);
+    }
+    .system-details summary {
+      cursor: pointer;
+      font: 500 13px var(--mono);
+      color: var(--muted);
+      user-select: none;
+    }
+    .system-details summary:hover { color: var(--ink); }
+    .system-details pre {
+      margin: 8px 0 0;
+      white-space: pre-wrap;
+      font: 12px/1.5 var(--mono);
+      color: var(--muted);
+      max-height: 160px;
+      overflow-y: auto;
+      background: var(--bg);
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid var(--rule);
+    }
+
+    .tool-result-box {
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.5;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 12px;
+      word-break: break-word;
+    }
+    .highlight-note {
+      background: rgba(192, 57, 43, 0.12);
+      border-left: 3px solid var(--flagged);
+      padding: 2px 4px 2px 8px;
+      display: block;
+      margin: 6px 0;
+      border-radius: 0 4px 4px 0;
+    }
+    .highlight-note.benign {
+      background: rgba(26, 115, 94, 0.12);
+      border-left: 3px solid var(--clean);
+    }
+
+    /* Meters Panel */
+    .meters-panel {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .meter-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .meter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .meter-name { font-weight: 600; font-size: 14px; }
+    .meter-score-val { font: 600 14px var(--mono); }
+    .meter-bar-container {
+      position: relative;
+      height: 24px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      overflow: visible;
+    }
+    .meter-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s ease, background 0.3s ease;
+    }
+    .meter-threshold-line {
+      position: absolute;
+      top: -4px;
+      bottom: -4px;
+      width: 2px;
+      background: var(--ink);
+      z-index: 2;
+    }
+    .meter-threshold-label {
+      position: absolute;
+      top: 26px;
+      font: 500 11px var(--mono);
+      color: var(--muted);
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    .meter-sub {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* How It Works Flow */
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 768px) {
+      .flow-steps { grid-template-columns: 1fr; }
+    }
+    .step-card {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+    }
+    .step-num {
+      font: 600 12px var(--mono);
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 2px 8px;
+      border-radius: 4px;
+      width: fit-content;
+    }
+
+    /* Results */
+    .controls-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .tab-btn {
+      padding: 6px 14px;
+      border: 1px solid var(--rule);
+      background: var(--surface);
+      color: var(--muted);
+      border-radius: 6px;
+      font: 500 13px var(--sans);
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+    }
+    @media (max-width: 820px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+    .chart-container {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 320px;
+    }
+    .chart-wrapper {
+      position: relative;
+      flex: 1;
+      min-height: 250px;
+      width: 100%;
+    }
+
+    /* Honest status line banner */
+    .honest-status {
+      background: var(--warn-soft);
+      border-left: 4px solid var(--warn);
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: var(--ink);
+    }
+
+    /* Next Steps list */
+    .next-list {
+      margin: 0;
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Footer & Contact */
+    footer {
+      border-top: 1px solid var(--rule);
+      padding-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .contact-links {
+      display: flex;
+      gap: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- 1. HERO -->
+    <section id="hero">
+      <div class="badge badge-subtle">Mechanistic Anomaly Detection</div>
+      <h1>Catching sleeper instructions in an AI agent's memory, from the inside.</h1>
+      <p class="lede" style="font-size: 19px; color: var(--muted);">
+        Attackers plant instructions in agent memory that wait for a trigger, and output monitors see nothing until it fires.
+      </p>
+      <div class="btn-row">
+        <a href="#example" class="btn btn-primary">See it work</a>
+        <a href="#results" class="btn btn-secondary">Read the results</a>
+      </div>
+    </section>
+
+    <!-- 2. INTERACTIVE EXAMPLE -->
+    <section id="example">
+      <div>
+        <h2>Interactive Example</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:8px;">
+          <p style="color:var(--muted); font-size:14px;">
+            Precomputed on held-out domains. Live sandbox available on request.
+          </p>
+          <span class="badge badge-subtle" id="domain-badge">Held-out: Shopify</span>
+        </div>
+      </div>
+
+      <div class="selector-bar">
+        <label for="example-select" style="font-weight: 500; font-size: 14px;">Select test request:</label>
+        <select id="example-select" class="select-input">
+          <option value="0">Shopify &bull; Live instruction + Malicious payload (Target)</option>
+          <option value="1">Shopify &bull; Live instruction + Benign payload</option>
+          <option value="2">Shopify &bull; Inert memory log + Malicious payload</option>
+          <option value="3">Shopify &bull; Inert memory log + Benign payload</option>
+          <option value="4">Slack &bull; Live instruction + Malicious payload (Target)</option>
+          <option value="5">Slack &bull; Live instruction + Benign payload</option>
+          <option value="6">Slack &bull; Inert memory log + Malicious payload</option>
+          <option value="7">Slack &bull; Inert memory log + Benign payload</option>
+        </select>
+      </div>
+
+      <div class="example-grid">
+        <!-- Agent Request Display -->
+        <div class="agent-window">
+          <div class="window-header">
+            <span>Incoming Request Context</span>
+            <span id="cell-indicator" class="badge">Target Cell</span>
+          </div>
+          <div class="window-body">
+            <!-- System prompt collapsed -->
+            <div class="msg-block">
+              <details class="system-details">
+                <summary>System Prompt &amp; Tool Definitions (collapsed)</summary>
+                <pre id="system-prompt-text"></pre>
+              </details>
+            </div>
+
+            <!-- User Query -->
+            <div class="msg-block">
+              <span class="msg-label">User Query</span>
+              <div class="msg-box" id="user-query-text" style="font-weight: 500;"></div>
+            </div>
+
+            <!-- Memory Retrieval Call -->
+            <div class="msg-block">
+              <span class="msg-label">Assistant Prior Turn</span>
+              <div class="msg-box mono" style="font-size: 12px; color: var(--muted);">
+                MemoryRetrieve(query="ALL")
+              </div>
+            </div>
+
+            <!-- Memory Tool Result with Highlighted Note -->
+            <div class="msg-block">
+              <span class="msg-label">Retrieved Memory Note</span>
+              <div class="tool-result-box" id="tool-result-display"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detection Meters -->
+        <div class="meters-panel">
+          <div>
+            <h3>Detection Meters</h3>
+            <p style="font-size: 13px; color: var(--muted); margin-top: 4px;">
+              Threshold calibrated to 10% FPR on training domains (held-out domain never seen).
+            </p>
+          </div>
+
+          <!-- Probe Meter -->
+          <div class="meter-item">
+            <div class="meter-header">
+              <span class="meter-name">Activation probe (layers 14–19)</span>
+              <span class="meter-score-val" id="probe-score-text">0.00</span>
+            </div>
+            <div class="meter-bar-container">
+              <div class="meter-fill" id="probe-bar-fill"></div>
+              <div class="meter-threshold-line" id="probe-thresh-line"></div>
+              <div class="meter-threshold-label" id="probe-thresh-label">Threshold: 5.33</div>
+            </div>
+            <div class="meter-sub">
+              <span id="probe-status-badge" class="badge">--</span>
+              <span>Margin: <strong id="probe-margin-text">0.00</strong></span>
+            </div>
+          </div>
+
+          <!-- TF-IDF Baseline Meter -->
+          <div class="meter-item">
+            <div class="meter-header">
+              <span class="meter-name">Text-only baseline (TF-IDF + LR)</span>
+              <span class="meter-score-val" id="tfidf-score-text">0.00</span>
+            </div>
+            <div class="meter-bar-container">
+              <div class="meter-fill" id="tfidf-bar-fill"></div>
+              <div class="meter-threshold-line" id="tfidf-thresh-line"></div>
+              <div class="meter-threshold-label" id="tfidf-thresh-label">Threshold: -0.17</div>
+            </div>
+            <div class="meter-sub">
+              <span id="tfidf-status-badge" class="badge">--</span>
+              <span>Margin: <strong id="tfidf-margin-text">0.00</strong></span>
+            </div>
+          </div>
+
+          <!-- Explanation box -->
+          <div style="font-size: 13px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 12px; line-height: 1.5;">
+            <strong>Decision logic:</strong> The detector flags requests where the model's internal residual representation matches the signature of an active instruction with a harmful action payload.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. HOW IT WORKS -->
+    <section id="how-it-works">
+      <h2>How It Works</h2>
+      <p style="color: var(--muted);">
+        Provider-side threat model: The defender operates the model inference API and observes only the incoming prompt and the model's own intermediate activations. No external execution monitor or parser is required.
+      </p>
+
+      <div class="flow-steps">
+        <div class="step-card">
+          <span class="step-num">Step 1</span>
+          <h3>Prompt Ingestion</h3>
+          <p style="font-size: 14px; color: var(--muted);">
+            An agent request arrives containing context, past interaction history, and retrieved persistent memory entries.
+          </p>
+        </div>
+        <div class="step-card">
+          <span class="step-num">Step 2</span>
+          <h3>Internal Activation Read</h3>
+          <p style="font-size: 14px; color: var(--muted);">
+            As the model processes the context, we extract the residual stream vectors at the end of the memory tool result token position (averaged across layers 14–19 of 24).
+          </p>
+        </div>
+        <div class="step-card">
+          <span class="step-num">Step 3</span>
+          <h3>Zero-Token Pre-emption</h3>
+          <p style="font-size: 14px; color: var(--muted);">
+            A lightweight linear probe evaluates the activation state and scores risk before the model writes a single output token.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. RESULTS -->
+    <section id="results">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <h2>Evaluation Results</h2>
+        <div class="controls-row">
+          <button class="tab-btn active" id="btn-sound" onclick="switchDataset('sound_2x2')">sound_2x2 (Primary)</button>
+          <button class="tab-btn" id="btn-scaleup" onclick="switchDataset('scaleup_2x2x10')">scaleup_2x2x10 (Pilot)</button>
+        </div>
+      </div>
+      <p style="color: var(--muted);">
+        Leave-one-domain-out (LODO) cross-validation evaluating out-of-domain generalization. Target: live instruction with malicious payload vs. benign/inert controls.
+      </p>
+
+      <div class="charts-grid">
+        <!-- Layer-by-layer AUROC -->
+        <div class="chart-container">
+          <div style="display:flex; justify-content:space-between; align-items:baseline;">
+            <h3 style="font-size:15px;">Per-Layer AUROC (Residual Stream)</h3>
+            <span class="mono" style="font-size:11px; color:var(--muted);">Layers 14–19 window</span>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="layerChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Baseline Comparison Bar Chart -->
+        <div class="chart-container">
+          <div style="display:flex; justify-content:space-between; align-items:baseline;">
+            <h3 style="font-size:15px;">Probe vs. Baselines</h3>
+            <span class="mono" style="font-size:11px; color:var(--muted);">95% Bootstrap CI</span>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="baselineChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Honest Status Line -->
+      <div class="honest-status">
+        &ldquo;The probe detects live planted instructions, but so far a bag-of-words model on the memory text does about as well. The next experiment labels requests by whether the agent actually executes the payload, to test whether activations carry information the text does not.&rdquo;
+      </div>
+    </section>
+
+    <!-- 5. WHAT'S NEXT -->
+    <section id="whats-next">
+      <h2>What's Next</h2>
+      <ul class="next-list">
+        <li>
+          <strong>Behaviour-labelled evaluation:</strong> 1,924 requests across held-out domains and templates, built and waiting for GPU allocation to measure whether internal activations predict real downstream execution when text alone is ambiguous.
+        </li>
+        <li>
+          <strong>Benign-payload control arm:</strong> Expanding naturalistic memory structures to verify resilience against legitimate standing goals, delayed tasks, and user preferences.
+        </li>
+        <li>
+          <strong>Cross-architecture evaluation:</strong> Evaluating probe transferability across other open-weights model families.
+        </li>
+      </ul>
+    </section>
+
+    <!-- 6. CONTACT -->
+    <section id="contact">
+      <h2>Contact &amp; Code</h2>
+      <p style="color: var(--muted);">
+        For research inquiries, replication questions, or access to the live sandbox:
+      </p>
+      <div class="btn-row">
+        <a id="mail-link" href="mailto:attacker123@gmail.com" class="btn btn-secondary">Email (attacker123@gmail.com)</a>
+        <a id="gh-link" href="https://github.com/pndh/sleeper_detection" target="_blank" rel="noopener" class="btn btn-secondary">GitHub (pndh/sleeper_detection)</a>
+      </div>
+    </section>
+
+    <footer>
+      <span>Mechanistic Sleeper Detection Research</span>
+      <span class="mono">Source: results/detector_demo/report.json</span>
+    </footer>
+
+  </div>
+
+  <script>
+    let examplesData = [];
+    let resultsData = null;
+    let currentDatasetKey = 'sound_2x2';
+    let layerChartInstance = null;
+    let baselineChartInstance = null;
+
+    // Custom plugin to shade layers 14-19
+    const shadeWindowPlugin = {
+      id: 'shadeWindow',
+      beforeDraw(chart) {
+        if (chart.canvas.id !== 'layerChart') return;
+        const { ctx, chartArea, scales } = chart;
+        const xScale = scales.x;
+        if (!xScale) return;
+        const xStart = xScale.getPixelForValue(14) - (xScale.getPixelForValue(1) - xScale.getPixelForValue(0)) / 2;
+        const xEnd = xScale.getPixelForValue(19) + (xScale.getPixelForValue(1) - xScale.getPixelForValue(0)) / 2;
+
+        ctx.save();
+        ctx.fillStyle = 'rgba(100, 120, 160, 0.12)';
+        ctx.fillRect(xStart, chartArea.top, xEnd - xStart, chartArea.bottom - chartArea.top);
+        ctx.restore();
+      }
+    };
+    Chart.register(shadeWindowPlugin);
+
+    async function init() {
+      try {
+        const [exRes, resRes] = await Promise.all([
+          fetch('data/examples.json'),
+          fetch('data/results.json')
+        ]);
+        examplesData = await exRes.json();
+        resultsData = await resRes.json();
+
+        setupExamples();
+        renderResultsCharts(currentDatasetKey);
+      } catch (err) {
+        console.error("Failed to load precomputed data:", err);
+      }
+    }
+
+    function setupExamples() {
+      const select = document.getElementById('example-select');
+      select.addEventListener('change', (e) => {
+        showExample(parseInt(e.target.value, 10));
+      });
+      if (examplesData.length > 0) {
+        showExample(0);
+      }
+    }
+
+    function showExample(idx) {
+      const ex = examplesData[idx];
+      if (!ex) return;
+
+      document.getElementById('domain-badge').textContent = `Held-out: ${ex.domain}`;
+      document.getElementById('system-prompt-text').textContent = ex.system_prompt;
+      document.getElementById('user-query-text').textContent = ex.user_query;
+
+      // Cell indicator
+      const cellBadge = document.getElementById('cell-indicator');
+      const isTarget = ex.framing_type.startsWith('live') && ex.payload_type === 'malicious';
+      cellBadge.textContent = isTarget ? 'Target Cell (Live + Malicious)' : `${ex.framing_type} / ${ex.payload_type}`;
+      cellBadge.className = 'badge ' + (isTarget ? 'badge-detected' : 'badge-subtle');
+
+      // Tool result highlighting
+      const noteHtml = `<div class="highlight-note ${ex.payload_type === 'benign' ? 'benign' : ''}"><strong>[Planted Memory Entry]:</strong> ${escapeHtml(ex.memory_note_text)}</div>`;
+      document.getElementById('tool-result-display').innerHTML = noteHtml;
+
+      // Meter ranges
+      // Probe meter: min -10, max +15
+      const probeMin = -10, probeMax = 15;
+      const probeNorm = Math.min(Math.max((ex.probe_score - probeMin) / (probeMax - probeMin), 0), 1) * 100;
+      const probeThreshNorm = Math.min(Math.max((ex.probe_threshold - probeMin) / (probeMax - probeMin), 0), 1) * 100;
+
+      document.getElementById('probe-score-text').textContent = ex.probe_score.toFixed(2);
+      const probeFill = document.getElementById('probe-bar-fill');
+      probeFill.style.width = `${probeNorm}%`;
+      probeFill.style.background = ex.probe_detected ? 'var(--flagged)' : 'var(--clean)';
+
+      document.getElementById('probe-thresh-line').style.left = `${probeThreshNorm}%`;
+      document.getElementById('probe-thresh-label').style.left = `${probeThreshNorm}%`;
+      document.getElementById('probe-thresh-label').textContent = `Thresh: ${ex.probe_threshold.toFixed(2)}`;
+
+      const probeStatus = document.getElementById('probe-status-badge');
+      probeStatus.textContent = ex.probe_detected ? 'FLAGGED' : 'CLEAR';
+      probeStatus.className = 'badge ' + (ex.probe_detected ? 'badge-detected' : 'badge-clear');
+      document.getElementById('probe-margin-text').textContent = (ex.probe_score - ex.probe_threshold > 0 ? '+' : '') + (ex.probe_score - ex.probe_threshold).toFixed(2);
+
+      // TFIDF meter: min -4, max +1
+      const tfidfMin = -4, tfidfMax = 1;
+      const tfidfNorm = Math.min(Math.max((ex.tfidf_score - tfidfMin) / (tfidfMax - tfidfMin), 0), 1) * 100;
+      const tfidfThreshNorm = Math.min(Math.max((ex.tfidf_threshold - tfidfMin) / (tfidfMax - tfidfMin), 0), 1) * 100;
+
+      document.getElementById('tfidf-score-text').textContent = ex.tfidf_score.toFixed(2);
+      const tfidfFill = document.getElementById('tfidf-bar-fill');
+      tfidfFill.style.width = `${tfidfNorm}%`;
+      tfidfFill.style.background = ex.tfidf_detected ? 'var(--flagged)' : 'var(--clean)';
+
+      document.getElementById('tfidf-thresh-line').style.left = `${tfidfThreshNorm}%`;
+      document.getElementById('tfidf-thresh-label').style.left = `${tfidfThreshNorm}%`;
+      document.getElementById('tfidf-thresh-label').textContent = `Thresh: ${ex.tfidf_threshold.toFixed(2)}`;
+
+      const tfidfStatus = document.getElementById('tfidf-status-badge');
+      tfidfStatus.textContent = ex.tfidf_detected ? 'FLAGGED' : 'CLEAR';
+      tfidfStatus.className = 'badge ' + (ex.tfidf_detected ? 'badge-detected' : 'badge-clear');
+      document.getElementById('tfidf-margin-text').textContent = (ex.tfidf_score - ex.tfidf_threshold > 0 ? '+' : '') + (ex.tfidf_score - ex.tfidf_threshold).toFixed(2);
+    }
+
+    function switchDataset(key) {
+      currentDatasetKey = key;
+      document.getElementById('btn-sound').classList.toggle('active', key === 'sound_2x2');
+      document.getElementById('btn-scaleup').classList.toggle('active', key === 'scaleup_2x2x10');
+      renderResultsCharts(key);
+    }
+
+    function renderResultsCharts(key) {
+      if (!resultsData || !resultsData[key]) return;
+      const data = resultsData[key];
+
+      // 1. Layer Chart
+      const curves = data.per_layer_lodo_auroc;
+      const layers = Array.from({ length: curves.target.length }, (_, i) => i);
+
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const gridColor = isDark ? '#2a3342' : '#e2e6ed';
+      const textColor = isDark ? '#95a1b5' : '#5d6778';
+
+      if (layerChartInstance) layerChartInstance.destroy();
+      const ctx1 = document.getElementById('layerChart').getContext('2d');
+      layerChartInstance = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: layers,
+          datasets: [
+            {
+              label: 'Target (Live + Malicious)',
+              data: curves.target,
+              borderColor: '#c0392b',
+              backgroundColor: '#c0392b',
+              borderWidth: 2,
+              pointRadius: 2.5,
+              tension: 0.1
+            },
+            {
+              label: 'Framing (Live vs Inert)',
+              data: curves.live,
+              borderColor: '#2980b9',
+              backgroundColor: '#2980b9',
+              borderWidth: 1.5,
+              pointRadius: 2,
+              tension: 0.1
+            },
+            {
+              label: 'Payload (Malicious vs Benign)',
+              data: curves.mal,
+              borderColor: '#27ae60',
+              backgroundColor: '#27ae60',
+              borderWidth: 1.5,
+              pointRadius: 2,
+              tension: 0.1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: textColor, boxWidth: 12, font: { family: 'IBM Plex Sans', size: 11 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(3)} AUROC`
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: 'Residual Layer Index (0 = Embeddings)', color: textColor, font: { size: 11 } },
+              grid: { color: gridColor },
+              ticks: { color: textColor }
+            },
+            y: {
+              min: 0.3,
+              max: 1.05,
+              title: { display: true, text: 'LODO AUROC', color: textColor, font: { size: 11 } },
+              grid: { color: gridColor },
+              ticks: { color: textColor }
+            }
+          }
+        }
+      });
+
+      // 2. Baseline Horizontal Bar Chart
+      const baselines = data.detector_vs_baselines;
+      const bNames = Object.keys(baselines);
+      const bVals = bNames.map(k => baselines[k].auroc);
+      const bCI = bNames.map(k => baselines[k].ci95);
+
+      if (baselineChartInstance) baselineChartInstance.destroy();
+      const ctx2 = document.getElementById('baselineChart').getContext('2d');
+
+      baselineChartInstance = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: bNames.map(n => n.length > 25 ? n.substring(0, 24) + '...' : n),
+          datasets: [{
+            label: 'AUROC',
+            data: bVals,
+            backgroundColor: ['#c0392b', '#d35400', '#7f8c8d', '#95a5a6'],
+            borderRadius: 4
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: (items) => bNames[items[0].dataIndex],
+                label: (ctx) => {
+                  const ci = bCI[ctx.dataIndex];
+                  return `AUROC: ${ctx.raw.toFixed(3)} [95% CI: ${ci[0].toFixed(2)}, ${ci[1].toFixed(2)}]`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              min: 0.4,
+              max: 1.0,
+              title: { display: true, text: 'LODO AUROC', color: textColor, font: { size: 11 } },
+              grid: { color: gridColor },
+              ticks: { color: textColor }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: textColor, font: { family: 'IBM Plex Sans', size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
