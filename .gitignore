@@ -18,6 +18,8 @@ htmlcov/
 # Logs
 *.log
 vllm.log
+.env
+*.env
 
 # Interpretability activation caches
 interp/cache/

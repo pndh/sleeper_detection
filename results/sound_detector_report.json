@@ -1,0 +1,32 @@
+{
+  "text_baseline_auroc": 0.8516666666666666,
+  "pre_fixed_window": {
+    "start_layer": 14,
+    "end_layer": 19,
+    "relative_depth": "58.3% - 79.2%",
+    "loco_cv_auroc": 0.8466666666666667,
+    "loco_cv_accuracy": 0.775
+  },
+  "interaction_endpoint": {
+    "mean_interaction": -7.24142427444458,
+    "std_interaction": 84.43657454300448,
+    "ci_95": [
+      -57.12817324161529,
+      40.88327558040617
+    ],
+    "t_statistic": -0.2712023117329824,
+    "p_value": 0.7923532011543546
+  },
+  "per_domain_interactions": {
+    "AmazonAddToCart_multi_5_1": -63.449891090393066,
+    "BankManagerPayBill_multi_7_1": 38.30902099609375,
+    "DropboxMoveItem_multi_4_1": -37.436187744140625,
+    "EvernoteManagerUpdateNotebook_multi_3_1": -161.24190521240234,
+    "GitHubManageCollaborator_multi_15_1": 66.961181640625,
+    "IndoorRobotGetAllowedOperations_multi_6_1": -93.53610229492188,
+    "ShopifyDeleteProduct_multi_2_2": 12.49123764038086,
+    "SlackManageMembership_multi_1_1": 16.87726593017578,
+    "TDAmeritradeTradeStock_multi_9_1": 14.80767822265625,
+    "VenmoRequestMoney_multi_8_1": 133.80345916748047
+  }
+}

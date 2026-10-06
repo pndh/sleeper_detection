@@ -15,6 +15,8 @@ Main entry points
     capture(dataset_dir, out_dir, ...)     -> cache activations for every request to disk, once
     load_cache(out_dir)                    -> stacked arrays + ids
     hooks({layer: fn})                     -> context manager for residual-stream edits (ablation, steering)
+    ablate(u) / steer(u, alpha)            -> edit fns for hooks(); check_edit(...) asserts the edit reached resid
+    generate(ids) / parse_tool_calls(text) -> greedy reply under any active hooks, and the tool calls in it
     teacher_force_ids(output)              -> prompt + the model's recorded vLLM reply, as token ids
 """
 from __future__ import annotations
@@ -22,6 +24,7 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import re
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -59,8 +62,13 @@ def model(device: str = "cuda:0"):
     if _MODEL is None:
         from transformers import AutoModelForCausalLM, AutoTokenizer
         _TOK = AutoTokenizer.from_pretrained(MODEL_ID, local_files_only=True)
-        _MODEL = AutoModelForCausalLM.from_pretrained(MODEL_ID, dtype=torch.bfloat16, device_map=device,
-                                                      local_files_only=True)
+        _MODEL = AutoModelForCausalLM.from_pretrained(
+            MODEL_ID,
+            torch_dtype=torch.bfloat16,
+            device_map=device,
+            low_cpu_mem_usage=True,
+            local_files_only=True
+        )
         _MODEL.eval()
     return _MODEL, _TOK
 
@@ -70,6 +78,7 @@ def forward(ids: list[int], positions: Iterable[int] | None = None, router: bool
             logits_at: Iterable[int] | None = None) -> dict:
     """One forward pass. Returns (on CPU, float32):
          resid   [n_pos, n_layers+1, d]  residual stream after embeddings (index 0) and after each layer
+                                         (index 24 is after the final norm: transformers ties it to last_hidden_state)
          router  [n_pos, n_layers, n_experts]  router logits (if router=True)
          attn    list per layer of [heads, n_pos, seq] attention from the chosen positions (if attentions=True)
          logits  [n_logit_pos, vocab] final logits at logits_at (default: last position)
@@ -100,22 +109,91 @@ def logit_lens(resid: torch.Tensor, top_k: int = 5) -> list[list[tuple[str, floa
 
 
 @contextlib.contextmanager
-def hooks(edits: dict[int, Callable[[torch.Tensor], torch.Tensor]]):
+def hooks(edits: dict[int, Callable[[torch.Tensor], torch.Tensor]], recorded: dict[int, torch.Tensor] | None = None):
     """Edit the residual stream after decoder layer L: edits = {L: fn(hidden [1, seq, d]) -> hidden}.
-    Example (ablate a direction v at layer 12):  {12: lambda h: h - (h @ v)[..., None] * v}"""
+    The hook returns the edited tensor, so later layers, logits and forward()'s resid[:, L+1] all see the edit.
+    It is registered with prepend=True because transformers (5.x) records output_hidden_states with its own forward
+    hook on every decoder layer. That hook is installed on the first forward and would otherwise run first and store
+    the unedited stream: the cause of the identical pre/post-ablation projections in the 2026-10 pilot report."""
     m, _ = model()
     handles = []
     for layer, fn in edits.items():
-        def hook(_mod, _inp, output, fn=fn):
-            if isinstance(output, tuple):
-                return (fn(output[0]),) + output[1:]
-            return fn(output)
-        handles.append(m.model.layers[layer].register_forward_hook(hook))
+        def hook(_mod, _inp, output, fn=fn, lyr=layer):
+            h = output[0] if isinstance(output, tuple) else output
+            h_mod = fn(h).to(h.dtype)
+            if recorded is not None:
+                recorded[lyr] = h_mod.detach().float().cpu()
+            return (h_mod,) + tuple(output[1:]) if isinstance(output, tuple) else h_mod
+        handles.append(m.model.layers[layer].register_forward_hook(hook, prepend=True))
     try:
         yield
     finally:
         for h in handles:
             h.remove()
+
+
+def ablate(u: torch.Tensor) -> Callable[[torch.Tensor], torch.Tensor]:
+    """Edit fn: project the unit direction u out of every position, in float32."""
+    def fn(h):
+        h32, u32 = h.float(), u.to(h.device, torch.float32)
+        return h32 - (h32 @ u32)[..., None] * u32
+    return fn
+
+
+def steer(u: torch.Tensor, alpha: float) -> Callable[[torch.Tensor], torch.Tensor]:
+    """Edit fn: add alpha * u at every position, in float32."""
+    def fn(h):
+        return h.float() + alpha * u.to(h.device, torch.float32)
+    return fn
+
+
+def edit_tolerance(h: torch.Tensor | np.ndarray) -> float:
+    """Bound on |h . u| left after an exact float32 edit is rounded back to bf16: each element's rounding error is at
+    most |h_i| * 2^-9, so |e . u| <= ||h|| * 2^-9 for unit u. Doubled for margin."""
+    return float(np.linalg.norm(np.asarray(h, dtype=np.float32))) * 2.0 ** -8
+
+
+def check_edit(ids: list[int], layer: int, u: np.ndarray, position: int, alpha: float | None = None) -> dict:
+    """Run one forward with ablate(u) (alpha=None) or steer(u, alpha) after `layer`, and assert the edit is visible in
+    resid[:, layer+1] at `position`: projection ~0 after ablation, baseline + alpha after steering. Raises otherwise."""
+    ut = torch.tensor(u, dtype=torch.float32)
+    base = forward(ids, positions=[position], router=False)["resid"][0, layer + 1].numpy()
+    with hooks({layer: ablate(ut) if alpha is None else steer(ut, alpha)}):
+        out = forward(ids, positions=[position], router=False)
+    edited = out["resid"][0, layer + 1].numpy()
+    p_base, p_edit = float(base @ u), float(edited @ u)
+    want = 0.0 if alpha is None else p_base + alpha
+    tol = edit_tolerance(edited)
+    assert abs(p_edit - want) <= tol, (f"edit after layer {layer} not visible in resid: projection {p_edit:+.4f}, "
+                                       f"expected {want:+.4f} +- {tol:.4f} (baseline {p_base:+.4f})")
+    return {"layer": layer, "alpha": alpha, "baseline_projection": p_base, "edited_projection": p_edit,
+            "expected_projection": want, "tolerance": tol, "logits": out["logits"]}
+
+
+@torch.no_grad()
+def generate(ids: list[int], max_new_tokens: int = 2048) -> tuple[list[int], str]:
+    """Greedy generation (KV cache, hooks apply at every step) until <|return|> or <|call|>. The reply starts with the
+    analysis channel, which ends in <|end|>, so <|end|> must not stop it: a tool call only comes after."""
+    m, tok = model()
+    x = torch.tensor([ids], device=m.device)
+    o = m.generate(x, attention_mask=torch.ones_like(x), max_new_tokens=max_new_tokens, do_sample=False,
+                   eos_token_id=[200002, 200012], pad_token_id=200002)
+    new_ids = o[0, len(ids):].tolist()
+    return new_ids, tok.decode(new_ids)
+
+
+def parse_tool_calls(reply: str) -> list[dict]:
+    """Tool calls in a raw harmony reply: `to=functions.NAME ... <|message|>{json}<|call|>`. Unparseable JSON args
+    are kept as {"_raw": ...}."""
+    calls = []
+    for name, body in re.findall(r"to=functions\.([\w.]+)[^<]*(?:<\|constrain\|>\w+)?<\|message\|>(.*?)<\|call\|>",
+                                 reply, re.S):
+        try:
+            args = json.loads(body)
+        except json.JSONDecodeError:
+            args = {"_raw": body}
+        calls.append({"name": name, "args": args})
+    return calls
 
 
 def teacher_force_ids(output: dict) -> tuple[list[int], int]:

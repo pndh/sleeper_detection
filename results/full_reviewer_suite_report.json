@@ -1,0 +1,183 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "architecture": "Mixture-of-Experts (24 layers, 32 experts, top-4 routing)",
+  "hardware": "NVIDIA A100-SXM4-80GB",
+  "step2_2x2_factorial": {
+    "results_2x2": {
+      "cell_1_1_live_malicious": {
+        "id": "cbc6350bfa70b817",
+        "payload_type": "malicious",
+        "framing_type": "live_instruction",
+        "projection_score": -93.90666961669922,
+        "cosine_similarity": -0.11400502920150757
+      },
+      "cell_1_2_live_benign": {
+        "id": "5e0b988b59df4120",
+        "payload_type": "benign",
+        "framing_type": "live_instruction",
+        "projection_score": -105.9200439453125,
+        "cosine_similarity": -0.12945455312728882
+      },
+      "cell_2_1_inert_malicious": {
+        "id": "2721f4e402b25ddc",
+        "payload_type": "malicious",
+        "framing_type": "inert_framing",
+        "projection_score": -61.42787170410156,
+        "cosine_similarity": -0.07218895852565765
+      },
+      "cell_2_2_inert_benign": {
+        "id": "35e503c0d2d9c6a0",
+        "payload_type": "benign",
+        "framing_type": "inert_framing",
+        "projection_score": -63.16524124145508,
+        "cosine_similarity": -0.07435160130262375
+      }
+    },
+    "matrix": {
+      "cell_1_1_live_malicious": -93.90666961669922,
+      "cell_1_2_live_benign": -105.9200439453125,
+      "cell_2_1_inert_malicious": -61.42787170410156,
+      "cell_2_2_inert_benign": -63.16524124145508
+    },
+    "conclusion": {
+      "content_detector_falsified": false,
+      "instruction_detector_falsified": false,
+      "commitment_hypothesis_confirmed": false,
+      "runner_up_margin": -32.478797912597656
+    }
+  },
+  "step3_causal_intervention": {
+    "ablation": {
+      "baseline_score": -63.99217987060547,
+      "ablated_score": -63.99217987060547,
+      "baseline_tokens": [
+        [
+          "<|channel|>",
+          1.0
+        ],
+        [
+          "<|message|>",
+          1.3176514046531196e-10
+        ],
+        [
+          " to",
+          7.052879807956103e-11
+        ],
+        [
+          "comment",
+          1.783247334519178e-11
+        ],
+        [
+          "<|constrain|>",
+          1.2256067688509731e-11
+        ]
+      ],
+      "ablated_tokens": [
+        [
+          "<|channel|>",
+          1.0
+        ],
+        [
+          "<|message|>",
+          4.05865202557365e-10
+        ],
+        [
+          " to",
+          2.4616969573898473e-10
+        ],
+        [
+          "comment",
+          4.2777878461741636e-11
+        ],
+        [
+          "<|constrain|>",
+          2.2897348947448215e-11
+        ]
+      ]
+    },
+    "steering": {
+      "clean_baseline_score": -104.51878356933594,
+      "sweeps": [
+        {
+          "alpha": 10.0,
+          "score": -104.51878356933594,
+          "top_tokens": [
+            [
+              "<|channel|>",
+              1.0
+            ],
+            [
+              "<|message|>",
+              3.3315444153414475e-11
+            ],
+            [
+              " to",
+              1.2256067688509731e-11
+            ]
+          ]
+        },
+        {
+          "alpha": 20.0,
+          "score": -104.51878356933594,
+          "top_tokens": [
+            [
+              "<|channel|>",
+              1.0
+            ],
+            [
+              "<|message|>",
+              4.2777878461741636e-11
+            ],
+            [
+              " to",
+              1.783247334519178e-11
+            ]
+          ]
+        },
+        {
+          "alpha": 40.0,
+          "score": -104.51878356933594,
+          "top_tokens": [
+            [
+              "<|channel|>",
+              1.0
+            ],
+            [
+              "<|message|>",
+              3.775134371775124e-11
+            ],
+            [
+              " to",
+              1.573710259328287e-11
+            ]
+          ]
+        },
+        {
+          "alpha": 60.0,
+          "score": -104.51878356933594,
+          "top_tokens": [
+            [
+              "<|channel|>",
+              1.0
+            ],
+            [
+              "<|message|>",
+              4.2777878461741636e-11
+            ],
+            [
+              " to",
+              2.020683967374204e-11
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "step4_behavioral_readiness": {
+    "total_cases_cataloged": 486
+  },
+  "_notes": {
+    "2026-10-04 step4": "Removed inert_dud_filtration_auroc (1.0), active_vs_inert_separation_margin (453.8) and the pic_scope/mechanism statements: hardcoded placeholders, never measured (docs/iclr_review_pilot.md W7).",
+    "2026-10-04 step3": "Invalid: measured with a hook that transformers' hidden-state recorder ran after, so the recorded residual never showed the edit (identical pre/post projections) and the direction was taken from resid index `layer` while the hook edited index layer+1. Rerun interp/run_full_reviewer_suite.py."
+  }
+}

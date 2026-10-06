@@ -1,0 +1,24 @@
+{
+  "n_requests": 100,
+  "n_domains": 10,
+  "start_date": "2026-10-06",
+  "realism_levels": {
+    "L0_verbatim": "paper_verbatim",
+    "L1_clean": "cue_words_removed",
+    "L2_natural": "natural_phrasing",
+    "L3_preference": "standing_preference",
+    "L4_minimal_pair": "minimal_pair"
+  },
+  "domains": [
+    "Shopify",
+    "Slack",
+    "Evernote",
+    "Dropbox",
+    "Amazon",
+    "IndoorRobot",
+    "BankManager",
+    "Venmo",
+    "TDAmeritrade",
+    "GitHub"
+  ]
+}

@@ -10,8 +10,8 @@ export VLLM_USE_FLASHINFER_SAMPLER=0
 exec $ENV/bin/vllm serve openai/gpt-oss-20b \
   --port "$PORT" \
   --served-model-name gpt-oss-20b \
-  --max-model-len 32768 \
-  --gpu-memory-utilization 0.85 \
+  --max-model-len 8192 \
+  --gpu-memory-utilization 0.92 \
   --enable-auto-tool-choice \
   --tool-call-parser openai \
   --reasoning-parser openai_gptoss \
