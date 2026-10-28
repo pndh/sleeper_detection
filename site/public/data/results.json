@@ -270,5 +270,112 @@
       "payload_probe_auroc": 0.675,
       "AND_of_factor_probes_auroc_on_target": 0.87
     }
+  },
+  "behavior_v1": {
+    "description": "Full benchmark on 1,924 requests across E1, E2, E3 held-out splits on gpt-oss-20b",
+    "per_layer_auroc": {
+      "live_inert": [
+        0.5,
+        0.9425,
+        0.8381,
+        0.8344,
+        0.8356,
+        0.8275,
+        0.9069,
+        0.9044,
+        0.9375,
+        0.9519,
+        0.9825,
+        0.99,
+        0.9919,
+        1.0,
+        0.9994,
+        0.9994,
+        0.9988,
+        0.9994,
+        0.9963,
+        0.9987,
+        1.0,
+        0.9969,
+        0.9919,
+        0.9919,
+        0.9888
+      ],
+      "fired": [
+        0.5,
+        0.3421,
+        0.0789,
+        0.0526,
+        0.1053,
+        0.1711,
+        0.1974,
+        0.4342,
+        0.4211,
+        0.1184,
+        0.2237,
+        0.4605,
+        0.5526,
+        0.7632,
+        0.7237,
+        0.9737,
+        0.9605,
+        0.9605,
+        0.9868,
+        0.9605,
+        0.8026,
+        0.8947,
+        0.7368,
+        0.6842,
+        0.7763
+      ]
+    },
+    "benchmarks": {
+      "live_inert": {
+        "E1_new_templates": {
+          "probe_auroc": 1.0,
+          "probe_tpr_5fpr": 1.0,
+          "jev_auroc": 0.816,
+          "jev_tpr_5fpr": 0.3,
+          "tfidf_auroc": 1.0
+        },
+        "E2_new_domains": {
+          "probe_auroc": 1.0,
+          "probe_tpr_5fpr": 1.0,
+          "jev_auroc": 0.924,
+          "jev_tpr_5fpr": 0.7,
+          "tfidf_auroc": 1.0
+        },
+        "E3_joint_heldout": {
+          "probe_auroc": 0.998,
+          "probe_tpr_5fpr": 1.0,
+          "jev_auroc": 0.879,
+          "jev_tpr_5fpr": 0.65,
+          "tfidf_auroc": 1.0
+        }
+      },
+      "fired": {
+        "E1_new_templates": {
+          "probe_auroc": 0.945,
+          "probe_tpr_5fpr": 0.846,
+          "jev_auroc": 0.473,
+          "jev_tpr_5fpr": 0.077,
+          "tfidf_auroc": 0.809
+        },
+        "E2_new_domains": {
+          "probe_auroc": 0.78,
+          "probe_tpr_5fpr": 0.55,
+          "jev_auroc": 0.647,
+          "jev_tpr_5fpr": 0.3,
+          "tfidf_auroc": 0.89
+        },
+        "E3_joint_heldout": {
+          "probe_auroc": 0.85,
+          "probe_tpr_5fpr": 0.5,
+          "jev_auroc": 0.075,
+          "jev_tpr_5fpr": 0.0,
+          "tfidf_auroc": 0.105
+        }
+      }
+    }
   }
 }
