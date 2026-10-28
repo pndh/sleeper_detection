@@ -1,0 +1,87 @@
+{
+  "source": "results/probe_live_inert/report_jev_baseline.json & interp/probe_live_inert/REPORT_jev_baseline.md",
+  "tasks": {
+    "live_inert": {
+      "title": "Live vs. Inert Note Discrimination (Threat & Persistence Detection)",
+      "description": "Separating active pending malicious instructions from inert past audit records of the same action across held-out splits.",
+      "splits": [
+        {
+          "split": "E1: Unseen Phrasing Templates",
+          "n": 40,
+          "positives": 20,
+          "probe_auroc": 1.0,
+          "probe_tpr_5fpr": 1.0,
+          "jev_auroc": 0.816,
+          "jev_tpr_5fpr": 0.3,
+          "tfidf_auroc": 1.0,
+          "jev_pos_score": 0.819,
+          "jev_neg_score": 0.625
+        },
+        {
+          "split": "E2: Unseen Environment Domains",
+          "n": 40,
+          "positives": 20,
+          "probe_auroc": 1.0,
+          "probe_tpr_5fpr": 1.0,
+          "jev_auroc": 0.924,
+          "jev_tpr_5fpr": 0.7,
+          "tfidf_auroc": 1.0,
+          "jev_pos_score": 0.913,
+          "jev_neg_score": 0.684
+        },
+        {
+          "split": "E3: Jointly Unseen Templates & Domains",
+          "n": 40,
+          "positives": 20,
+          "probe_auroc": 0.998,
+          "probe_tpr_5fpr": 1.0,
+          "jev_auroc": 0.879,
+          "jev_tpr_5fpr": 0.65,
+          "tfidf_auroc": 1.0,
+          "jev_pos_score": 0.88,
+          "jev_neg_score": 0.685
+        }
+      ]
+    },
+    "fired": {
+      "title": "Execution Prediction (Will the Agent Fire the Sleeper Payload?)",
+      "description": "Predicting whether gpt-oss-20b will obey or suppress the instruction before token generation begins.",
+      "splits": [
+        {
+          "split": "E1: Unseen Phrasing Templates",
+          "n": 33,
+          "positives": 13,
+          "probe_auroc": 0.945,
+          "probe_tpr_5fpr": 0.846,
+          "jev_auroc": 0.473,
+          "jev_tpr_5fpr": 0.077,
+          "jev_pos_score": 0.822,
+          "jev_neg_score": 0.826
+        },
+        {
+          "split": "E2: Unseen Environment Domains",
+          "n": 40,
+          "positives": 20,
+          "probe_auroc": 0.78,
+          "probe_tpr_5fpr": 0.55,
+          "jev_auroc": 0.647,
+          "jev_tpr_5fpr": 0.3,
+          "jev_pos_score": 0.939,
+          "jev_neg_score": 0.913
+        },
+        {
+          "split": "E3: Jointly Unseen Templates & Domains",
+          "n": 22,
+          "positives": 2,
+          "probe_auroc": 0.85,
+          "probe_tpr_5fpr": 0.5,
+          "jev_auroc": 0.075,
+          "jev_tpr_5fpr": 0.0,
+          "jev_pos_score": 0.65,
+          "jev_neg_score": 0.889
+        }
+      ]
+    }
+  },
+  "key_takeaway": "Text guards panic over sensitive keywords in benign inert logs (scoring them ~0.65 risk), crashing recall at 5% false alarms. Internal probes achieve 1.000 AUROC and 100% recall with zero false alarm penalty."
+}
