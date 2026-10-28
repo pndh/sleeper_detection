@@ -1070,6 +1070,9 @@
         <div>
           <div class="badge badge-subtle" style="color: #FF5F05; font-weight:600; border-color: rgba(255,95,5,0.3);">AI ALIGNMENT @ ILLINOIS &middot; MIDPOINT CHECKPOINT</div>
           <h2 style="margin-top: 6px;">Fellowship Research Progress Deck</h2>
+          <p style="color: var(--muted); margin-top: 4px; font-size: 13.5px;">
+            Raghav Agarwal (<a href="mailto:raghava7@illinois.edu">raghava7@illinois.edu</a>) &middot; Huy Pham (<a href="mailto:huynp2@illinois.edu">huynp2@illinois.edu</a>) &middot; Mentors: Enyi Jiang, Himnish Hunma
+          </p>
         </div>
         <div class="btn-row">
           <a href="downloads/AIA%20Presentation%20slides.pptx" download class="btn btn-primary btn-sm">
@@ -1081,7 +1084,7 @@
         </div>
       </div>
       <p style="color: var(--muted);">
-        Interactive 12-slide checkpoint presentation detailing mechanistic findings, baseline comparisons against frontier text judges, and causal roadmap.
+        Interactive 14-slide checkpoint presentation detailing mechanistic findings, baseline comparisons against frontier text judges, and causal roadmap.
       </p>
 
       <div class="deck-container">
@@ -1096,7 +1099,7 @@
         <div class="deck-tabs-wrapper">
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--muted);">
             <span>Select Slide (or use &larr; / &rarr; arrow keys):</span>
-            <span class="mono" id="deck-slide-counter">Slide 1 of 12</span>
+            <span class="mono" id="deck-slide-counter">Slide 1 of 14</span>
           </div>
           <div class="deck-tabs" id="deck-tabs-container">
             <!-- Populated dynamically via JS -->
@@ -1570,7 +1573,7 @@
       <div class="split-grid">
         <div class="split-card">
           <strong style="font-size:14px;">Fellowship Midpoint Checkpoint Deck</strong>
-          <span style="font-size:13px; color:var(--muted);">Complete 12-slide presentation in PowerPoint and PDF formats.</span>
+          <span style="font-size:13px; color:var(--muted);">Complete 14-slide presentation in PowerPoint and PDF formats.</span>
           <div class="btn-row" style="margin-top:auto;">
             <a href="downloads/AIA%20Presentation%20slides.pptx" download class="btn btn-primary btn-sm">PowerPoint (.pptx)</a>
             <a href="downloads/AIA%20Presentation%20slides.pdf" download class="btn btn-secondary btn-sm">PDF (.pdf)</a>
@@ -1597,10 +1600,11 @@
 <section id="contact">
       <h2>Contact &amp; Code</h2>
       <p style="color: var(--muted);">
-        For research inquiries, replication questions, or access to the live sandbox:
+        Research by Raghav Agarwal (<a href="mailto:raghava7@illinois.edu">raghava7@illinois.edu</a>) &amp; Huy Pham (<a href="mailto:huynp2@illinois.edu">huynp2@illinois.edu</a>). For research inquiries, replication questions, or access to the live sandbox:
       </p>
       <div class="btn-row">
-        <a id="mail-link" href="mailto:raghava7@illinois.edu" class="btn btn-secondary">Email (raghava7@illinois.edu)</a>
+        <a id="mail-link-raghav" href="mailto:raghava7@illinois.edu" class="btn btn-secondary">Email Raghav (raghava7@illinois.edu)</a>
+        <a id="mail-link-huy" href="mailto:huynp2@illinois.edu" class="btn btn-secondary">Email Huy (huynp2@illinois.edu)</a>
         <a id="gh-link" href="https://github.com/pndh/sleeper_detection" target="_blank" rel="noopener" class="btn btn-secondary">GitHub (pndh/sleeper_detection)</a>
       </div>
     </section>
@@ -1643,20 +1647,22 @@
 
     // ================================= SLIDES CAROUSEL =================================
     let currentSlideIdx = 1;
-    const totalSlides = 12;
+    const totalSlides = 14;
     const slideTitles = [
-      "01 Title",
-      "02 Midpoint Evidence",
+      "01 Midpoint Checkpoint",
+      "02 What We Know",
       "03 Why It Matters",
-      "04 Approach & Method",
-      "05 Milestones Plan",
-      "06 Benchmark Data",
-      "07 Preliminary Results",
-      "08 Robustness Checks",
-      "09 Unresolved & Risks",
-      "10 Fellowship Plan",
-      "11 Mentor Feedback",
-      "12 Appendix & Setup"
+      "04 Approach & Design",
+      "05 Progress vs Plan",
+      "06 Benchmark & Data",
+      "07 Live vs Inert Layers",
+      "08 Probe vs Text AUROC",
+      "09 Attack Obedience",
+      "10 Robustness Checks",
+      "11 Unresolved & Risks",
+      "12 Fellowship Plan",
+      "13 Discussion & Feedback",
+      "14 Setup & Reproducibility"
     ];
 
     function initSlideDeck() {
