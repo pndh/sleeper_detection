@@ -81,7 +81,7 @@ set_text_frame(s1.shapes[1].text_frame, "AIA @ ILLINOIS  /  FALL 2026", default_
 set_text_frame(s1.shapes[6].text_frame, "Dormant Poison & Sleeper Instruction\nDetection in LLM Agents", default_size=28, default_color=ORANGE, default_bold=True, font_name="Arial", space_after=6)
 # Ensure Raghav's name has plenty of top clearance
 s1.shapes[7].top = Inches(5.25)
-s1_p0 = "Raghav Agarwal  ·  AIA Research Fellow"
+s1_p0 = "Raghav Agarwal (raghava7@illinois.edu)  ·  AIA Research Fellow"
 s1_p1 = "AI Alignment @ Illinois Research Fellowship  ·  October 2026"
 set_text_frame(s1.shapes[7].text_frame, [s1_p0, s1_p1], default_size=17.5, default_color=WHITE, default_bold=False, font_name="Arial", space_after=5)
 
@@ -275,11 +275,12 @@ set_text_frame(s12.shapes[6].text_frame, [
     "• Linear Probing: L2 logistic probes on residual stream at memory_result_end, isolating executive Layers 14–19."
 ], default_size=14.5, default_color=NAVY, space_after=5)
 
-# Col 2: Evidence & Code - 2 concise punchy bullets
+# Col 2: Evidence & Code - includes email contact at the end
 set_text_frame(s12.shapes[8].text_frame, [
     "• Open Codebase: github.com/RaghavAgarwal08/sleeper_detection (branch raghav/probe-live-inert).",
-    "• Live Benchmark Site: https://pndh.github.io/sleeper_detection/ with interactive inspector & artifacts."
-], default_size=14.5, default_color=NAVY, space_after=5)
+    "• Live Benchmark Site: https://pndh.github.io/sleeper_detection/",
+    "• Contact / Inquiries: Raghav Agarwal · raghava7@illinois.edu"
+], default_size=13.5, default_color=NAVY, space_after=4)
 
 # Bottom: References
 s12.shapes[9].top = Inches(5.30)
@@ -288,6 +289,13 @@ set_text_frame(s12.shapes[10].text_frame,
     "• Li et al. (2026), 'Sleeper Attacks on LLM Agents via Persistent Memory'  ·  Zou et al. (2023), 'Representation Engineering'  ·  TypeSafe Decisions API (~typesafe/jev-latest)",
     default_size=14, default_color=NAVY, space_after=4)
 
-prs.save(OUT_PPTX)
-shutil.copy(OUT_PPTX, ARTIFACT_DIR / OUT_PPTX.name)
-print(f"Successfully generated: {OUT_PPTX}")
+# Save primary presentation file requested by user: 'AIA Presentation slides.pptx'
+OUT_PPTX_NEW = Path('/home/pndhpndh/sleeper_detection/AIA Presentation slides.pptx')
+OUT_PPTX_LEGACY = Path('/home/pndhpndh/sleeper_detection/AIA_Illinois_Midpoint_Checkpoint_Raghav_Agarwal.pptx')
+
+prs.save(OUT_PPTX_NEW)
+prs.save(OUT_PPTX_LEGACY)
+shutil.copy(OUT_PPTX_NEW, ARTIFACT_DIR / OUT_PPTX_NEW.name)
+shutil.copy(OUT_PPTX_LEGACY, ARTIFACT_DIR / OUT_PPTX_LEGACY.name)
+print(f"Successfully generated: {OUT_PPTX_NEW}")
+print(f"Successfully generated: {OUT_PPTX_LEGACY}")
