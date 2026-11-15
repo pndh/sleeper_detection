@@ -27,8 +27,10 @@ interp/data/behavior_v1/behavior.jsonl
 
 # OS / Editor files
 .DS_Store
-Thumbs.db
 .vscode/
 .idea/
 *.swp
 *.swo
+
+# Transient demo results
+results/demo_type_b/*.json
